@@ -17,6 +17,12 @@ async function authoriseAndConnect() {
 };
 
 let md;
+
+async function getMd() {
+  if (md === undefined) await initSafe()
+  return md
+}
+
 async function createMutableData() {
   console.log("Creating MutableData with initial dataset...");
   const typeTag = 15000;
@@ -32,14 +38,11 @@ async function createMutableData() {
     })
   };
   await md.quickSetup(initialData);
-}
+};
 
-async function getPeople() {
+export function getPeople() {
+  console.log('safe-api: getPeople()')
   return [
-		{
-			first: 'SAFE',
-			last: 'People'
-		},
 		{
 			first: 'David',
 			last: 'Irvine'
@@ -47,12 +50,16 @@ async function getPeople() {
 		{
 			first: 'Nick',
 			last: 'Lambert'
+		},
+		{
+			first: 'Dug',
+			last: 'Campbell'
 		}
 	];
 };
 
-async function getItems() {
-  const entries = await md.getEntries();
+export async function getItems() {
+  const entries = await (await getMd()).getEntries();
   const entriesList = await entries.listEntries();
   const items = [];
   entriesList.forEach((entry) => {
@@ -61,19 +68,20 @@ async function getItems() {
     const parsedValue = JSON.parse(value.buf);
     items.push({ key: entry.key, value: parsedValue, version: value.version });
   });
+  console.log('getItems() returning\n%O', items)
   return items;
 };
 
 async function insertItem(key, value) {
   const mutations = await safeApp.mutableData.newMutation();
   await mutations.insert(key, JSON.stringify(value));
-  await md.applyEntriesMutation(mutations);
+  await (await getMd()).applyEntriesMutation(mutations);
 };
 
 async function updateItem(key, value, version) {
   const mutations = await safeApp.mutableData.newMutation();
   await mutations.update(key, JSON.stringify(value), version + 1);
-  await md.applyEntriesMutation(mutations);
+  await (await getMd()).applyEntriesMutation(mutations);
 };
 
 async function deleteItems(items) {
@@ -81,14 +89,17 @@ async function deleteItems(items) {
   items.forEach(async (item) => {
     await mutations.delete(item.key, item.version + 1);
   });
-  await md.applyEntriesMutation(mutations);
+  await (await getMd()).applyEntriesMutation(mutations);
 };
 
-export async function doStuff(app) {
-  console.log('safe-api: doStuff()!!!')
+let isInitialised = false;
 
-  // Note safeApp will be a Promise
+export async function initSafe() {
+  console.log('safe-api: initSafe()!!!')
+
   await authoriseAndConnect();
   await createMutableData();
-
+  isInitialised = true;
 }
+
+export function isSafeInitialised() { return isInitialised; }

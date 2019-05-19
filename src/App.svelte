@@ -2,9 +2,9 @@
 
 
 <script>
-  import { doStuff } from './safe-api'
-  doStuff();
-  
+  import { initSafe, isSafeInitialised, getPeople, getItems } from './safe-api'
+  initSafe();
+
 	let people = [
 		{
 			first: 'SAFE3',
@@ -20,12 +20,17 @@
 		}
 	];
 
+  people = getPeople();
+  $: people = getPeople();
+
+  let items = []
+  $: items = (isSafeInitialised() ? getItems() : []);
+  $: n = items.length;
 
 	let prefix = '';
 	let first = '';
 	let last = '';
 	let i = 0;
-
 
 	$: filteredPeople = prefix
 		? people.filter(person => {
