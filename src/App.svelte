@@ -1,9 +1,13 @@
 <!-- https://eugenkiss.github.io/7guis/tasks#crud -->
 
+
 <script>
+  import { doStuff } from './safe-api'
+  doStuff();
+  
 	let people = [
 		{
-			first: 'SAFE2',
+			first: 'SAFE3',
 			last: 'Network'
 		},
 		{
@@ -16,10 +20,12 @@
 		}
 	];
 
+
 	let prefix = '';
 	let first = '';
 	let last = '';
 	let i = 0;
+
 
 	$: filteredPeople = prefix
 		? people.filter(person => {
