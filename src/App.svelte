@@ -63,9 +63,15 @@
 		font-size: inherit;
 	}
 
+  .content {
+    margin: 0 0 1em 2em;
+  }
+
+  h1 { text-align: left;}
+
 	input {
 		display: block;
-		margin: 0 0 0.5em 0;
+		margin: 1em 0 0.5em 0;
 	}
 
 	select {
@@ -83,20 +89,41 @@
   <title>Svelte on SAFE</title>
 </svelte:head>
 
-<input placeholder="filter prefix" bind:value={prefix}>
+<div class='content'>
+  <h1>SAFE Web App Tutorial example using Svelte</h1>
+  <p>This is a single page web app based on the SAFE Web App Tutorial, but modified to use the Svelte framework. It uses a modified version of the 7guis CRUD example from the Svelte website.
+  <p>&nbsp;</p>
+  <h2>What it does</h2>
+  <p>TODO: The list shows ???</p>
+</div>
 
-<select bind:value={i} size={5}>
-	<option value="">Select a person to edit</option>
-	{#each filteredPeople as person, i}
-		<option value={i}>{person.last}, {person.first}</option>
-	{/each}
-</select>
+<div class='content'>
+  <input placeholder="filter prefix" bind:value={prefix}>
 
-<label><input bind:value={first} placeholder="first"></label>
-<label><input bind:value={last} placeholder="last"></label>
+  <select bind:value={i} size={5}>
+  	<option value="">Select a person to edit</option>
+  	{#each filteredPeople as person, i}
+  		<option value={i}>{person.last}, {person.first}</option>
+  	{/each}
+  </select>
 
-<div class='buttons'>
-	<button on:click={create} disabled="{!first || !last}">create</button>
-	<button on:click={update} disabled="{!first || !last || !selected}">update</button>
-	<button on:click={remove} disabled="{!selected}">delete</button>
+  <label><input bind:value={first} placeholder="first"></label>
+  <label><input bind:value={last} placeholder="last"></label>
+
+  <div class='buttons'>
+  	<button on:click={create} disabled="{!first || !last}">create</button>
+  	<button on:click={update} disabled="{!first || !last || !selected}">update</button>
+  	<button on:click={remove} disabled="{!selected}">delete</button>
+  </div>
+</div>
+<hr>
+
+<div class='content'>
+  <h2>About Svelte</h2>
+  <p>Svelte is a new easy to learn web framework which can be used to create web apps on SAFE Network. Svelte is:</p>
+  <li>compiled</li>
+  <li>fast and lightweight (suitable for mobile and embedded apps)</li>
+  <li>creates truly reactive code</li>
+  <li>is more declarative (e.g. 40% less code to write)</li>
+  <li>when using the sapper router, can still be exported to create a static website (see Sapper documentation on 'Exporting')</li>
 </div>
