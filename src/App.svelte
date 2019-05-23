@@ -3,7 +3,6 @@
 <script>
   import { initSafe,
     isSafeInitialised,
-    getPeople,
     getItems,
     insertItem,
     updateItem,
@@ -37,16 +36,15 @@
 		text = selection ? selection.value.text : '';
 	}
 
-  $: updateEnable = updateEnabled(text, made, textInput, madeInput);
-
-  function updateEnabled() {
-
-    console.log('text, made          :', text, made)
-    console.log('textInput, madeInput:', textInput, madeInput)
-    let status = ((madeInput !== '' && textInput !== '') && ((made !== madeInput) || (text !== textInput)));
-    console.log('updateEnabled() - ', status)
-    return status;
-  }
+  // $: updateEnable = updateEnabled(text, made, textInput, madeInput);
+  //
+  // function updateEnabled() {
+  //   console.log('text, made          :', text, made)
+  //   console.log('textInput, madeInput:', textInput, madeInput)
+  //   let status = ((madeInput !== '' && textInput !== '') && ((made !== madeInput) || (text !== textInput)));
+  //   console.log('updateEnabled() - ', status)
+  //   return status;
+  // }
 
   function onEnterForCreate(v) {
     console.log('onEnterForCreate', v)
@@ -59,9 +57,9 @@
 		text = textInput = selection ? selection.value.text : '';
   }
 
-  async function updateItems() {
+  async function updateItems(keepIndex) {
     items = await getItems();
-    i = items.length - 1;
+    i = Math.min(keepIndex ? keepIndex : i, items.length - 1);
     return items;
   }
 
@@ -78,23 +76,31 @@
   }
 
 	async function create() {
-    console.log('create()')
-    let key = nextKey().toString()
-    console.log('nextKey() returned:', key)
-    await insertItem(key, { 'made': madeInput, 'text': textInput })
-    await updateItems()
+    console.log('create()');
+    let key = nextKey().toString();
+    console.log('nextKey() returned:', key);
+    await insertItem(key, { 'made': madeInput, 'text': textInput });
+    await updateItems(Number(key)-1);
   }
 
 	async function update() {
-    console.log('update()')
-    await updateItem(i, { madeInput, textInput })
-    await updateItems()
+    console.log('update()');
+    made = madeInput;
+    text = textInput;
+    await insertItem(items[i].key, { made, text }); // Also handles update
+    await updateItems(i);
 	}
 
 	async function remove() {
-    console.log('remove()')
-    await deleteItems([items[i]])
-    await updateItems()
+    console.log('remove()');
+    await deleteItems([items[i]]);
+    await updateItems(i);
+    if (items.length !== 0) {
+      madeInput = items[i].value.made;
+  		textInput = items[i].value.text;
+    } else {
+      madeInput = textInput = '';
+    }
 	}
 </script>
 
