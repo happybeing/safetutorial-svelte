@@ -33,7 +33,7 @@ npm install
 npm run dev
 ```
 
-Start SAFE Browser (dev build) and navigate to [localhost:5000](http://localhost:5000). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
+Start SAFE Browser (dev build) and navigate to [localhost:5000](http://localhost:5000). You should see your app running. Edit a component file in `src`, save it and the page will reload to show your changes.
 
 
 ## Deploying to SAFE Network
