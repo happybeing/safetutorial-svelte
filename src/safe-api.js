@@ -13,26 +13,21 @@ async function authoriseAndConnect() {
   const authUri = await window.safe.authorise(authReqUri);
   console.log('SAFE application authorised by user');
   await safeApp.auth.loginFromUri(authUri);
-  console.log("Application connected to the network");
+  console.log("safe-api: Application connected to the network");
 };
 
 let md;
 
-async function getMd() {
-  if (md === undefined) await initSafe()
-  return md
-}
-
 async function createMutableData() {
-  console.log("Creating MutableData with initial dataset...");
+  console.log("safe-api: Creating MutableData with initial dataset...");
   const typeTag = 15000;
   md = await safeApp.mutableData.newRandomPublic(typeTag);
   const initialData = {
-    "random_key_1": JSON.stringify({
+    "1": JSON.stringify({
         text: 'Scotland to try Scotch whisky',
         made: false
     }),
-    "random_key_2": JSON.stringify({
+    "2": JSON.stringify({
         text: 'Patagonia before I\'m too old',
         made: false
     })
@@ -40,26 +35,12 @@ async function createMutableData() {
   await md.quickSetup(initialData);
 };
 
-export function getPeople() {
-  console.log('safe-api: getPeople()')
-  return [
-		{
-			first: 'David',
-			last: 'Irvine'
-		},
-		{
-			first: 'Nick',
-			last: 'Lambert'
-		},
-		{
-			first: 'Dug',
-			last: 'Campbell'
-		}
-	];
-};
+let lastItems = []
 
 export async function getItems() {
-  const entries = await (await getMd()).getEntries();
+  console.log('safe-api: getItems()')
+  if (!await isSafeInitialised()) return [];
+  const entries = await md.getEntries();
   const entriesList = await entries.listEntries();
   const items = [];
   entriesList.forEach((entry) => {
@@ -68,38 +49,64 @@ export async function getItems() {
     const parsedValue = JSON.parse(value.buf);
     items.push({ key: entry.key, value: parsedValue, version: value.version });
   });
+  lastItems = items
   console.log('getItems() returning\n%O', items)
   return items;
 };
 
-async function insertItem(key, value) {
-  const mutations = await safeApp.mutableData.newMutation();
-  await mutations.insert(key, JSON.stringify(value));
-  await (await getMd()).applyEntriesMutation(mutations);
+export async function insertItem(key, value) {
+  console.log('safe-api: insertItem()')
+  if (!await isSafeInitialised()) return;
+
+  try {
+    let valueVersion = await md.get(key)
+    if (valueVersion !== undefined) return updateItem(key, value, valueVersion.version+1)
+  } catch(e) {
+    const mutations = await safeApp.mutableData.newMutation();
+    await mutations.insert(key, JSON.stringify(value));
+    await md.applyEntriesMutation(mutations);
+  }
 };
 
-async function updateItem(key, value, version) {
+export async function updateItem(key, value, version) {
+  console.log('safe-api: updateItem()')
+  if (!await isSafeInitialised()) return;
   const mutations = await safeApp.mutableData.newMutation();
-  await mutations.update(key, JSON.stringify(value), version + 1);
-  await (await getMd()).applyEntriesMutation(mutations);
+  await mutations.update(key, JSON.stringify(value), version);
+  await md.applyEntriesMutation(mutations);
 };
 
-async function deleteItems(items) {
+export async function deleteItems(items) {
+  console.log('safe-api: deleteItems()')
+  if (!await isSafeInitialised()) return;
   const mutations = await safeApp.mutableData.newMutation();
   items.forEach(async (item) => {
     await mutations.delete(item.key, item.version + 1);
   });
-  await (await getMd()).applyEntriesMutation(mutations);
+  await md.applyEntriesMutation(mutations);
 };
 
 let isInitialised = false;
+let initActive = false;
 
 export async function initSafe() {
-  console.log('safe-api: initSafe()!!!')
+  console.log('safe-api: initSafe()')
+  if (isInitialised) {
+    console.log('safe-api: skipping init - already initialised')
+    return true;
+  }
 
+  if (initActive) {
+    console.log('safe-api: skipping init - already in progress')
+    return false;
+  }
+
+  initActive = true;
   await authoriseAndConnect();
   await createMutableData();
   isInitialised = true;
+  initActive = false;
+  return true;
 }
 
-export function isSafeInitialised() { return isInitialised; }
+export async function isSafeInitialised() { return initSafe(); }

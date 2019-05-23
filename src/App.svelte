@@ -1,72 +1,149 @@
 <!-- https://eugenkiss.github.io/7guis/tasks#crud -->
 
-
 <script>
-  import { initSafe, isSafeInitialised, getPeople, getItems } from './safe-api'
-  initSafe();
-
-	let people = [
-		{
-			first: 'SAFE3',
-			last: 'Network'
-		},
-		{
-			first: 'Max',
-			last: 'Mustermann'
-		},
-		{
-			first: 'Roman',
-			last: 'Tisch'
-		}
-	];
-
-  people = getPeople();
-  $: people = getPeople();
+  import { initSafe,
+    isSafeInitialised,
+    getPeople,
+    getItems,
+    insertItem,
+    updateItem,
+    deleteItems
+  } from './safe-api'
 
   let items = []
-  $: items = (isSafeInitialised() ? getItems() : []);
-  $: n = items.length;
+  getItems().then((v) => { items = v })
 
 	let prefix = '';
-	let first = '';
-	let last = '';
+  let made = '';
+  let text = '';
+  let madeInput = '';
+  let textInput = '';
 	let i = 0;
 
-	$: filteredPeople = prefix
-		? people.filter(person => {
-			const name = `${person.last}, ${person.first}`;
-			return name.toLowerCase().startsWith(prefix.toLowerCase());
-		})
-		: people;
+  $: showi = console.log('i: ', i);
+  $: showselection = console.log('selection: ', ( filteredItems[i] ? filteredItems[i].key.toString() + ' ' + filteredItems[i].value.text : 'none'));
 
-	$: selected = filteredPeople[i];
+	$: filteredItems = prefix
+		? items.filter(item => {
+			const composite = `${item.value.made}, ${item.value.text}`;
+			return composite.toLowerCase().startsWith(prefix.toLowerCase());
+		})
+		: items;
+
+	$: selection = filteredItems[i];
 
 	$: {
-		first = selected ? selected.first : '';
-		last = selected ? selected.last : '';
+		made = selection ? selection.value.made : '';
+		text = selection ? selection.value.text : '';
 	}
 
-	function create() {
-		people = people.concat({ first, last });
-		i = people.length - 1;
-		first = last = '';
+  $: updateEnable = updateEnabled(text, made, textInput, madeInput);
+
+  function updateEnabled() {
+
+    console.log('text, made          :', text, made)
+    console.log('textInput, madeInput:', textInput, madeInput)
+    let status = ((madeInput !== '' && textInput !== '') && ((made !== madeInput) || (text !== textInput)));
+    console.log('updateEnabled() - ', status)
+    return status;
+  }
+
+  function onEnterForCreate(v) {
+    console.log('onEnterForCreate', v)
+    madeInput = textInput = '';
+  }
+
+  function onOptionClick(v) {
+    console.log('onOptionClick', v)
+    made = madeInput = selection ? selection.value.made.toString() : '';
+		text = textInput = selection ? selection.value.text : '';
+  }
+
+  async function updateItems() {
+    items = await getItems();
+    i = items.length - 1;
+    return items;
+  }
+
+  function nextKey() {
+    let key = 1;
+    items.forEach((item) => {
+      let itemKey = Number(item.key);
+      console.log('key: ', key);
+      console.log('item.key: ', itemKey);
+      if (itemKey > key) return;
+      ++key;
+    });
+    return key;
+  }
+
+	async function create() {
+    console.log('create()')
+    let key = nextKey().toString()
+    console.log('nextKey() returned:', key)
+    await insertItem(key, { 'made': madeInput, 'text': textInput })
+    await updateItems()
+  }
+
+	async function update() {
+    console.log('update()')
+    await updateItem(i, { madeInput, textInput })
+    await updateItems()
 	}
 
-	function update() {
-		people[i] = { first, last };
-	}
-
-	function remove() {
-		people = [...people.slice(0, i), ...people.slice(i + 1)];
-
-		first = last = '';
-		i = Math.min(i, people.length - 1);
-	}
-
-	function reset_inputs(person) {
-		({ first, last } = person);
+	async function remove() {
+    console.log('remove()')
+    await deleteItems([items[i]])
+    await updateItems()
 	}
 </script>
+
+<svelte:head>
+  <title>Svelte on SAFE</title>
+</svelte:head>
+
+<div class='content'>
+  <h1>SAFE Web App Tutorial example using Svelte</h1>
+  <p>This is a single page web app based on the SAFE Web App Tutorial with a GUI implemented using the Svelte web framework.</p>
+  <p>The GUI is adapted from the 7guis CRUD example from the Svelte website. This isn't an ideal UI for the tutorial example, but was a quick way to create this demo with minimal changes to the SAFE API code from the tutorial and the 7guis CRUD example.
+  <h2>What it does</h2>
+  <p>The SAFE tutorial app lets you create and edit a list of places to visit, which you can mark as visited. Each entry is stored as a JSON string in a mutable data entry. Each entry value has properties for visit 'made' and a 'text' description, which are shown in the list and can be edited.</p>
+</div>
+
+<div class='content'>
+  <input placeholder="filter prefix" bind:value={prefix}>
+
+  <select bind:value={i} size={5}>
+  	<option on:click={onEnterForCreate} value="">Enter data for create...</option>
+  	{#each filteredItems as item, i}
+  		<option on:click={onOptionClick} value={i}>{item.value.made}, {item.value.text}</option>
+  	{/each}
+  </select>
+
+  <label><input bind:value={madeInput} placeholder="made"></label>
+  <label><input bind:value={textInput} placeholder="text"></label>
+
+  <div class='buttons'>
+  	<button on:click={create} disabled="{(!madeInput || !textInput) || selection}">create</button>
+    <!-- <button on:click={update} disabled="{!updateEnable}">update</button> -->
+    <button on:click={update} disabled="{!((madeInput !== '' && textInput !== '') && ((made !== madeInput) || (text !== textInput)) && selection)}">update</button>
+  	<button on:click={remove} disabled="{!selection}">delete</button>
+  </div>
+</div>
+<hr>
+
+<div class='content'>
+  <h2>About SAFE</h2>
+  <p>SAFE Network is a truly decentralised secure storage and communications network. For more see safenetwork.tech</p>
+  <h2>About Svelte</h2>
+  <p>Svelte is a succinct, performant web framework which can be used to create web apps on SAFE Network. For more see svelte.dev</p>
+  <p>Svelte is:</p>
+  <li>compiled</li>
+  <li>fast and lightweight (suitable for mobile and embedded apps)</li>
+  <li>creates truly reactive code</li>
+  <li>is more declarative (e.g. 40% less code to write)</li>
+  <li>when using the sapper router, can still be exported to create a static website (see Sapper documentation on 'Exporting')</li>
+</div>
 
 <style>
 	* {
@@ -95,46 +172,3 @@
 		clear: both;
 	}
 </style>
-
-<svelte:head>
-  <title>Svelte on SAFE</title>
-</svelte:head>
-
-<div class='content'>
-  <h1>SAFE Web App Tutorial example using Svelte</h1>
-  <p>This is a single page web app based on the SAFE Web App Tutorial, but modified to use the Svelte framework. It uses a modified version of the 7guis CRUD example from the Svelte website.
-  <p>&nbsp;</p>
-  <h2>What it does</h2>
-  <p>TODO: The list shows ???</p>
-</div>
-
-<div class='content'>
-  <input placeholder="filter prefix" bind:value={prefix}>
-
-  <select bind:value={i} size={5}>
-  	<option value="">Select a person to edit</option>
-  	{#each filteredPeople as person, i}
-  		<option value={i}>{person.last}, {person.first}</option>
-  	{/each}
-  </select>
-
-  <label><input bind:value={first} placeholder="first"></label>
-  <label><input bind:value={last} placeholder="last"></label>
-
-  <div class='buttons'>
-  	<button on:click={create} disabled="{!first || !last}">create</button>
-  	<button on:click={update} disabled="{!first || !last || !selected}">update</button>
-  	<button on:click={remove} disabled="{!selected}">delete</button>
-  </div>
-</div>
-<hr>
-
-<div class='content'>
-  <h2>About Svelte</h2>
-  <p>Svelte is a new easy to learn web framework which can be used to create web apps on SAFE Network. Svelte is:</p>
-  <li>compiled</li>
-  <li>fast and lightweight (suitable for mobile and embedded apps)</li>
-  <li>creates truly reactive code</li>
-  <li>is more declarative (e.g. 40% less code to write)</li>
-  <li>when using the sapper router, can still be exported to create a static website (see Sapper documentation on 'Exporting')</li>
-</div>
