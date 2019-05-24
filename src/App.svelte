@@ -110,7 +110,7 @@
 
 <div class='content'>
   <h1>SAFE Web App Tutorial example using Svelte</h1>
-  <p>This is a single page web app based on the SAFE Web App Tutorial with a GUI implemented using the Svelte web framework.</p>
+  <p>This is a single page web app based on the SAFE Web App Tutorial with a GUI implemented using the Svelte web framework. The source code is at https://github.com/theWebalyst/safetutorial-svelte</p>
   <p>The GUI is adapted from the 7guis CRUD example from the Svelte website. This isn't an ideal UI for the tutorial example, but was a quick way to create this demo with minimal changes to the SAFE API code from the tutorial and the 7guis CRUD example.
   <h2>What it does</h2>
   <p>The SAFE tutorial app lets you create and edit a list of places to visit, which you can mark as visited. Each entry is stored as a JSON string in a mutable data entry. Each entry value has properties for visit 'made' and a 'text' description, which are shown in the list and can be edited.</p>
